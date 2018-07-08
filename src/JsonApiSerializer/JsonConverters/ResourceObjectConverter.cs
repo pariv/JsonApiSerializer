@@ -148,6 +148,7 @@ namespace JsonApiSerializer.JsonConverters
             var relationships = new List<KeyValuePair<JsonProperty, object>>();
 
             //will capture id and type as we go through
+            object tempId = null;
             object id = null;
             object type = null;
 
@@ -165,8 +166,21 @@ namespace JsonApiSerializer.JsonConverters
             foreach (var prop in contract.Properties.Where(x=>!x.Ignored))
             {
                 var propValue = prop.ValueProvider.GetValue(value);
-                if (propValue == null && (prop.NullValueHandling ?? serializer.NullValueHandling) == NullValueHandling.Ignore)
+                if (propValue == null &&
+                    (prop.NullValueHandling ?? serializer.NullValueHandling) == NullValueHandling.Ignore)
+                {
+                    if (prop.PropertyName == PropertyNames.Id)
+                    {
+                        var refData = ResourceReferenceData.GetResourceReferenceData(value);
+                        if (refData.TempId != null)
+                        {
+                            tempId = refData.TempId;
+                            writer.WritePropertyName(PropertyNames.TempId);
+                            serializer.Serialize(writer, tempId);
+                        }
+                    }
                     continue;
+                }
                 var propType = propValue?.GetType() ?? prop.PropertyType;
 
                 switch (prop.PropertyName)
@@ -227,7 +241,7 @@ namespace JsonApiSerializer.JsonConverters
 
             //add reference to this type, so others can reference it
             var serializationData = SerializationData.GetSerializationData(writer);
-            var reference = new ResourceObjectReference(id?.ToString(), type?.ToString());
+            var reference = tempId == null?  new ResourceObjectReference(id?.ToString(), type?.ToString()): new ResourceObjectReference(id?.ToString(), type?.ToString(), tempId.ToString());
             serializationData.Included[reference] = value;
             serializationData.RenderedIncluded.Add(reference);
         }
@@ -262,11 +276,26 @@ namespace JsonApiSerializer.JsonConverters
 
             writer.WriteStartObject();
 
-            //A "resource identifier object" MUST contain type and id members.
-            writer.WritePropertyName(PropertyNames.Id);
+            string tempIdVal = null;
             var idProp = contract.Properties.GetClosestMatchProperty(PropertyNames.Id);
-            var idVal = idProp?.ValueProvider?.GetValue(value) ?? string.Empty;
-            serializer.Serialize(writer, idVal);
+            var idVal = idProp?.ValueProvider?.GetValue(value);
+            if (idVal == null)
+            {
+                var referenceData = ResourceReferenceData.GetResourceReferenceData(value);
+                var serData = SerializationData.GetSerializationData(writer);
+                tempIdVal = referenceData.TempId ?? serData.NextTempId;
+                referenceData.TempId = tempIdVal;
+                writer.WritePropertyName(PropertyNames.TempId);
+                serializer.Serialize(writer, tempIdVal);
+                writer.WritePropertyName(PropertyNames.Method);
+                serializer.Serialize(writer, "create");
+            }
+            else
+            {
+                //A "resource identifier object" MUST contain type and id members.
+                writer.WritePropertyName(PropertyNames.Id);
+                serializer.Serialize(writer, idVal);
+            }
 
             writer.WritePropertyName(PropertyNames.Type);
             var typeProp = contract.Properties.GetClosestMatchProperty(PropertyNames.Type);
@@ -307,7 +336,7 @@ namespace JsonApiSerializer.JsonConverters
             if (willWriteObjectToIncluded)
             {
                 var serializationData = SerializationData.GetSerializationData(writer);
-                var reference = new ResourceObjectReference(idVal.ToString(), typeVal.ToString());
+                var reference = tempIdVal == null ? new ResourceObjectReference(idVal?.ToString(), typeVal?.ToString()) : new ResourceObjectReference(null, typeVal.ToString(), tempIdVal);
                 serializationData.Included[reference] = value;
             }
         }

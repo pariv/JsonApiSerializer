@@ -12,5 +12,7 @@
         public const string Meta = "meta";
         public const string Errors = "errors";
         public const string Href = "href";
+        public const string TempId = "temp-id";
+        public const string Method = "method";
     }
 }

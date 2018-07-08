@@ -8,26 +8,28 @@ namespace JsonApiSerializer.SerializationState
     {
         public readonly string Id;
         public readonly string Type;
+        public readonly string TempId;
 
-        public ResourceObjectReference(string id, string type)
+        public ResourceObjectReference(string id, string type, string tempId = null)
         {
             Id = id;
             Type = type;
+            TempId = tempId;
         }
 
         public ResourceObjectReference(JObject jobj) 
-            : this(jobj[PropertyNames.Id]?.ToString(), jobj[PropertyNames.Type]?.ToString())
+            : this(jobj[PropertyNames.Id]?.ToString(), jobj[PropertyNames.Type]?.ToString(), jobj[PropertyNames.TempId]?.ToString())
         {
         }
 
         public override string ToString()
         {
-            return Id + ":" + Type;
+            return Id + ":" + Type + ":" + TempId;
         }
 
         public bool Equals(ResourceObjectReference other)
         {
-            return other.Id == this.Id && other.Type == this.Type;
+            return other.Id == this.Id && other.Type == this.Type && other.TempId == TempId;
         }
 
         public override bool Equals(object obj)
@@ -42,6 +44,7 @@ namespace JsonApiSerializer.SerializationState
                 int hash = 17;
                 hash = hash * 23 + Id?.GetHashCode() ?? 0;
                 hash = hash * 23 + Type?.GetHashCode() ?? 0;
+                hash = hash * 23 + TempId?.GetHashCode() ?? 0;
                 return hash;
             }
         }

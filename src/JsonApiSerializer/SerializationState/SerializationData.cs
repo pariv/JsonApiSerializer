@@ -8,6 +8,7 @@ namespace JsonApiSerializer.SerializationState
 {
     internal class SerializationData
     {
+        private int tempId = 0;
         private static ConditionalWeakTable<object, SerializationData> _perSerializationData = new ConditionalWeakTable<object, SerializationData>();
 
         public static SerializationData GetSerializationData(JsonWriter writer)
@@ -39,7 +40,7 @@ namespace JsonApiSerializer.SerializationState
         /// </summary>
         public HashSet<ResourceObjectReference> RenderedIncluded = new HashSet<ResourceObjectReference>();
 
-
+        public string NextTempId => (++tempId).ToString();
 
     }
 }
