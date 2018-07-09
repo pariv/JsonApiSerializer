@@ -166,8 +166,11 @@ namespace JsonApiSerializer.JsonConverters
             foreach (var prop in contract.Properties.Where(x=>!x.Ignored))
             {
                 var propValue = prop.ValueProvider.GetValue(value);
+                var propType = propValue?.GetType() ?? prop.PropertyType;
                 if (propValue == null &&
-                    (prop.NullValueHandling ?? serializer.NullValueHandling) == NullValueHandling.Ignore)
+                    (prop.NullValueHandling ?? serializer.NullValueHandling) == NullValueHandling.Ignore ||
+                    (prop.DefaultValueHandling ?? serializer.DefaultValueHandling) == DefaultValueHandling.Ignore &&
+                    (propValue == null || propValue.Equals(propType.GetDefault())))
                 {
                     if (prop.PropertyName == PropertyNames.Id)
                     {
@@ -179,9 +182,10 @@ namespace JsonApiSerializer.JsonConverters
                             serializer.Serialize(writer, tempId);
                         }
                     }
+
                     continue;
                 }
-                var propType = propValue?.GetType() ?? prop.PropertyType;
+
 
                 switch (prop.PropertyName)
                 {
@@ -200,6 +204,8 @@ namespace JsonApiSerializer.JsonConverters
                         writer.WritePropertyName(PropertyNames.Type);
                         type = typeProp?.ValueProvider?.GetValue(value) ?? GenerateDefaultTypeName(valueType);
                         serializer.Serialize(writer, type);
+                        break;
+                    case PropertyNames.Method when propType == typeof(Method):
                         break;
                     case var _ when TryParseAsRelationship(contractResolver.ResolveContract(propType), propValue, out var relationshipObj):
                         relationships.Add(new KeyValuePair<JsonProperty, object>(prop, relationshipObj));
@@ -302,6 +308,17 @@ namespace JsonApiSerializer.JsonConverters
             var typeVal = typeProp?.ValueProvider?.GetValue(value) ?? GenerateDefaultTypeName(value.GetType());
             serializer.Serialize(writer, typeVal);
 
+            var methodProp = contract.Properties.GetClosestMatchProperty(PropertyNames.Method);
+            if (methodProp?.PropertyType == typeof(Method))
+            {
+                var methodValue = methodProp.ValueProvider?.GetValue(value);
+                if (!Method.None.Equals(methodValue))
+                {
+                    writer.WritePropertyName(PropertyNames.Method);
+                    serializer.Serialize(writer, methodValue?.ToString().ToLower());
+                }
+            }
+
             //we will only write the object to included if there are properties that have have data
             //that we cant include within the reference
             var willWriteObjectToIncluded = contract.Properties.Any(prop =>
@@ -310,6 +327,7 @@ namespace JsonApiSerializer.JsonConverters
                 if (prop.PropertyName == PropertyNames.Id
                     || prop.PropertyName == PropertyNames.Type
                     || prop.PropertyName == PropertyNames.Meta
+                    || prop.PropertyName == PropertyNames.Method
                     || prop.Ignored)
                     return false;
 

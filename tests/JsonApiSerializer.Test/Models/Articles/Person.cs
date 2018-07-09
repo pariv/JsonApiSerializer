@@ -1,4 +1,5 @@
 ﻿using JsonApiSerializer.JsonApi;
+using JsonApiSerializer.JsonApi.WellKnown;
 using Newtonsoft.Json;
 
 namespace JsonApiSerializer.Test.Models.Articles
@@ -18,5 +19,7 @@ namespace JsonApiSerializer.Test.Models.Articles
         public string Twitter { get; set; }
 
         public Links Links { get; set; }
+
+        public Method Method { get; set; }
     }
 }

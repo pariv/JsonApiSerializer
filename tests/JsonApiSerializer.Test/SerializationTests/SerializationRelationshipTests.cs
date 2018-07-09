@@ -6,6 +6,7 @@ using JsonApiSerializer.Test.TestUtils;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
+using JsonApiSerializer.JsonApi.WellKnown;
 using Xunit;
 
 namespace JsonApiSerializer.Test.SerializationTests
@@ -730,6 +731,92 @@ namespace JsonApiSerializer.Test.SerializationTests
                     }
                 ]
             }";
+            Assert.Equal(expectedjson, json, JsonStringEqualityComparer.Instance);
+        }
+
+        [Fact]
+        public void When_updating_resources_with_relations_sets_update_method_to_relations()
+        {
+            var article = new Article
+            {
+                Id = "1",
+                Author = new Person {FirstName = "John", LastName = "Smith", Id = "12", Method = Method.Update},
+                Title = "New Article",
+            };
+            var json = JsonConvert.SerializeObject(article, settings);
+            var expectedjson = @"{
+                ""data"": {
+                    ""id"": ""1"",
+                    ""type"": ""articles"",
+                    ""attributes"": {
+                        ""title"": ""New Article""
+                    },
+                    ""relationships"": {
+                        ""author"": {
+                            ""data"": { 
+                                ""id"":""12"", 
+                                ""method"":""update"",
+                                ""type"":""people""
+                            }
+                        }
+                    }
+                },
+                ""included"" : [
+                    {
+                        ""id"": ""12"",
+                        ""type"": ""people"",
+                        ""attributes"":{
+                            ""first-name"": ""John"",
+                            ""last-name"": ""Smith"",
+                        }
+
+                    }
+                ]
+            }";
+
+            Assert.Equal(expectedjson, json, JsonStringEqualityComparer.Instance);
+        }
+
+        [Fact]
+        public void When_destroying_resources_with_relations_sets_destroy_method_to_relations()
+        {
+            var article = new Article
+            {
+                Id = "1",
+                Author = new Person {FirstName = "John", LastName = "Smith", Id = "12", Method = Method.Destroy},
+                Title = "New Article",
+            };
+            var json = JsonConvert.SerializeObject(article, settings);
+            var expectedjson = @"{
+                ""data"": {
+                    ""id"": ""1"",
+                    ""type"": ""articles"",
+                    ""attributes"": {
+                        ""title"": ""New Article""
+                    },
+                    ""relationships"": {
+                        ""author"": {
+                            ""data"": { 
+                                ""id"":""12"", 
+                                ""method"":""destroy"",
+                                ""type"":""people""
+                            }
+                        }
+                    }
+                },
+                ""included"" : [
+                    {
+                        ""id"": ""12"",
+                        ""type"": ""people"",
+                        ""attributes"":{
+                            ""first-name"": ""John"",
+                            ""last-name"": ""Smith"",
+                        }
+
+                    }
+                ]
+            }";
+
             Assert.Equal(expectedjson, json, JsonStringEqualityComparer.Instance);
         }
     }
