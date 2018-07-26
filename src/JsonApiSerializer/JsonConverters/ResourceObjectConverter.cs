@@ -167,10 +167,9 @@ namespace JsonApiSerializer.JsonConverters
             {
                 var propValue = prop.ValueProvider.GetValue(value);
                 var propType = propValue?.GetType() ?? prop.PropertyType;
-                if (propValue == null &&
-                    (prop.NullValueHandling ?? serializer.NullValueHandling) == NullValueHandling.Ignore ||
-                    (prop.DefaultValueHandling ?? serializer.DefaultValueHandling) == DefaultValueHandling.Ignore &&
-                    (propValue == null || propValue.Equals(propType.GetDefault())))
+                if ((propValue == null || propValue.Equals(propType.GetDefault())) &&
+                    ((prop.NullValueHandling ?? serializer.NullValueHandling) == NullValueHandling.Ignore ||
+                    (prop.DefaultValueHandling ?? serializer.DefaultValueHandling) == DefaultValueHandling.Ignore))
                 {
                     if (prop.PropertyName == PropertyNames.Id)
                     {
@@ -285,7 +284,8 @@ namespace JsonApiSerializer.JsonConverters
             string tempIdVal = null;
             var idProp = contract.Properties.GetClosestMatchProperty(PropertyNames.Id);
             var idVal = idProp?.ValueProvider?.GetValue(value);
-            if (idVal == null)
+            var propType = idVal?.GetType() ?? idProp?.PropertyType;
+            if (idVal == null || propType == null || idVal.Equals(propType.GetDefault()))
             {
                 var referenceData = ResourceReferenceData.GetResourceReferenceData(value);
                 var serData = SerializationData.GetSerializationData(writer);
