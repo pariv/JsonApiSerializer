@@ -185,9 +185,8 @@ namespace JsonApiSerializer.JsonConverters
             {
                 var propValue = prop.ValueProvider.GetValue(value);
                 var propType = propValue?.GetType() ?? prop.PropertyType;
-                if ((propValue == null || propValue.Equals(propType.GetDefault())) &&
-                    ((prop.NullValueHandling ?? serializer.NullValueHandling) == NullValueHandling.Ignore ||
-                    (prop.DefaultValueHandling ?? serializer.DefaultValueHandling) == DefaultValueHandling.Ignore))
+                if ((propValue == null && (prop.NullValueHandling ?? serializer.NullValueHandling) == NullValueHandling.Ignore) || 
+                    (propValue != null && propValue.Equals(propType.GetDefault()) && (prop.DefaultValueHandling ?? serializer.DefaultValueHandling) == DefaultValueHandling.Ignore))
                 {
                     if (prop.PropertyName == PropertyNames.Id)
                     {

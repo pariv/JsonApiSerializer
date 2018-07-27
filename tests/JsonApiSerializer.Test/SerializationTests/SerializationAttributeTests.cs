@@ -110,5 +110,36 @@ namespace JsonApiSerializer.Test.SerializationTests
                 }
             }".Trim(), json, JsonStringEqualityComparer.Instance);
         }
+
+        [Fact]
+        public void When_field_value_type_not_ignored_default_value_should_not_be_ignored()
+        {
+            var root = new DocumentRoot<ArticleWithValueTypeAttribute>
+            {
+                Data = new ArticleWithValueTypeAttribute
+                {
+                    Id = "1234",
+                    Order = 0, //default 
+                    NotIncludedOrder = 0, //DefaultValueHandling.Ignore
+                }
+            };
+            var newSettings = new JsonApiSerializerSettings()
+            {
+                Formatting = Formatting.Indented, //pretty print makes it easier to debug
+                NullValueHandling = NullValueHandling.Include,
+            };
+            var json = JsonConvert.SerializeObject(root, newSettings);
+            Assert.Equal(@"
+            {
+                ""data"": {
+                ""type"": ""articles"",
+                ""id"": ""1234"",
+                ""attributes"": {
+                    ""order"": 0
+                }
+                }
+            }".Trim(), json, JsonStringEqualityComparer.Instance);
+
+        }
     }
 }
