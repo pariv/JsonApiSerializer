@@ -95,8 +95,13 @@ namespace JsonApiSerializer.JsonConverters
             string tempId = null;
             //A "resource identifier object" MUST contain type and id members.
             //serialize id
-            WriterUtil.ShouldWriteProperty(resourceObject, resourceObjectContract.IdProperty, serializer, out string id);
-            if (id is null)
+            if (WriterUtil.ShouldWriteProperty(resourceObject, resourceObjectContract.IdProperty, serializer,
+                out string id))
+            {
+                writer.WritePropertyName(PropertyNames.Id);
+                writer.WriteValue(id);
+            }
+            else
             {
                 var referenceData = ResourceReferenceData.GetResourceReferenceData(resourceObject);
                 tempId = referenceData.TempId ?? serializationData.NextTempId;
@@ -105,11 +110,6 @@ namespace JsonApiSerializer.JsonConverters
                 writer.WriteValue(tempId);
                 writer.WritePropertyName(PropertyNames.Method);
                 serializer.Serialize(writer, "create");
-            }
-            else
-            {
-                writer.WritePropertyName(PropertyNames.Id);
-                writer.WriteValue(id);
             }
 
             if (WriterUtil.ShouldWriteProperty(resourceObject, resourceObjectContract.MethodProperty, serializer,

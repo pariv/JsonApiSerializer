@@ -835,6 +835,46 @@ namespace JsonApiSerializer.Test.SerializationTests
             }";
             Assert.Equal(expectedjson, json, JsonStringEqualityComparer.Instance);
         }
+        [Fact]
+        public void When_passing_objects_and_references_with_value_type_id_with_default_value_create_temp_id()
+        {
+            var article = new ArticleWithValueTypeId
+            {
+                Author = new PersonWithValueTypeId {FirstName = "John", LastName = "Smith" },
+                Title = "New Article"
+            };
+
+            var json = JsonConvert.SerializeObject(article, settings);
+            var expectedjson = @"{
+                ""data"": {
+                    ""type"": ""articles"",
+                    ""attributes"": {
+                        ""title"": ""New Article""
+                    },
+                    ""relationships"": {
+                        ""author"": {
+                            ""data"": { 
+                                ""temp-id"":""1"", 
+                                ""method"":""create"",
+                                ""type"":""people""
+                            }
+                        }
+                    }
+                },
+                ""included"" : [
+                    {
+                        ""temp-id"": ""1"",
+                        ""type"": ""people"",
+                        ""attributes"":{
+                            ""first-name"": ""John"",
+                            ""last-name"": ""Smith"",
+                        }
+
+                    }
+                ]
+            }";
+            Assert.Equal(expectedjson, json, JsonStringEqualityComparer.Instance);
+        }
 
         
         [Fact]
