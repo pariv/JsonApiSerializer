@@ -1,13 +1,14 @@
-﻿using JsonApiSerializer.JsonApi.WellKnown;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
+using System.Collections.Generic;
 
 namespace JsonApiSerializer.SerializationState
 {
     internal struct ResourceObjectReference : IEquatable<ResourceObjectReference>
     {
         public readonly string Id;
+
         public readonly string Type;
+
         public readonly string TempId;
 
         public ResourceObjectReference(string id, string type, string tempId = null)
@@ -15,11 +16,6 @@ namespace JsonApiSerializer.SerializationState
             Id = id;
             Type = type;
             TempId = tempId;
-        }
-
-        public ResourceObjectReference(JObject jobj) 
-            : this(jobj[PropertyNames.Id]?.ToString(), jobj[PropertyNames.Type]?.ToString(), jobj[PropertyNames.TempId]?.ToString())
-        {
         }
 
         public override string ToString()
@@ -34,19 +30,16 @@ namespace JsonApiSerializer.SerializationState
 
         public override bool Equals(object obj)
         {
-            return obj is ResourceObjectReference && Equals((ResourceObjectReference)obj);
+            return obj is ResourceObjectReference reference && Equals(reference);
         }
 
         public override int GetHashCode()
         {
-            unchecked // Overflow is fine, just wrap
-            {
-                int hash = 17;
-                hash = hash * 23 + Id?.GetHashCode() ?? 0;
-                hash = hash * 23 + Type?.GetHashCode() ?? 0;
-                hash = hash * 23 + TempId?.GetHashCode() ?? 0;
-                return hash;
-            }
+            var hashCode = 1325953389;
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Id);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Type);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(TempId);
+            return hashCode;
         }
     }
 }

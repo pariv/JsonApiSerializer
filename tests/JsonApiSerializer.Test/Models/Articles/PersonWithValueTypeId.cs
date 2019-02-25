@@ -4,11 +4,12 @@ using Newtonsoft.Json;
 
 namespace JsonApiSerializer.Test.Models.Articles
 {
-    public class Person
+    public class PersonWithValueTypeId
     {
         public string Type { get; set; } = "people";
 
-        public string Id { get; set; }
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public int Id { get; set; }
 
         [JsonProperty(propertyName: "first-name")]
         public string FirstName { get; set; }
@@ -16,6 +17,7 @@ namespace JsonApiSerializer.Test.Models.Articles
         [JsonProperty(propertyName: "last-name")]
         public string LastName { get; set; }
 
+        [JsonIgnore]
         public string Twitter { get; set; }
 
         public Links Links { get; set; }
@@ -23,5 +25,6 @@ namespace JsonApiSerializer.Test.Models.Articles
         public Method Method { get; set; }
 
         public Meta Meta { get; set; }
+
     }
 }

@@ -111,6 +111,7 @@ namespace JsonApiSerializer.Test.SerializationTests
             }".Trim(), json, JsonStringEqualityComparer.Instance);
         }
 
+        
         [Fact]
         public void When_field_value_type_not_ignored_default_value_should_not_be_ignored()
         {
@@ -140,6 +141,32 @@ namespace JsonApiSerializer.Test.SerializationTests
                 }
             }".Trim(), json, JsonStringEqualityComparer.Instance);
 
+        }
+
+        [Fact]
+        public void When_Id_property_is_value_type_we_should_ignore_default_value()
+        {
+            var root = new DocumentRoot<PersonWithValueTypeId>
+            {
+                Data = new PersonWithValueTypeId
+                {
+                    FirstName = "John", //after lastname
+                    LastName = "Smith", //before firstname
+                    Twitter = "jsmi" //ignored
+                }
+            };
+            var json = JsonConvert.SerializeObject(root, settings);
+
+            Assert.Equal(@"
+                {
+                  ""data"": {
+                    ""type"": ""people"",
+                    ""attributes"": {
+                      ""last-name"": ""Smith"",
+                      ""first-name"": ""John""
+                    }
+                  }
+                }".Trim(), json, JsonStringEqualityComparer.Instance);
         }
     }
 }

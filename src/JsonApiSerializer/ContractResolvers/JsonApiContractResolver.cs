@@ -1,5 +1,5 @@
 ﻿using System;
-using JsonApiSerializer.JsonApi;
+using JsonApiSerializer.ContractResolvers.Contracts;
 using JsonApiSerializer.JsonConverters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -14,12 +14,17 @@ namespace JsonApiSerializer.ContractResolvers
 
         internal readonly ResourceRelationshipConverter ResourceRelationshipConverter;
 
+        internal readonly ResourceIdentifierConverter ResourceIdentifierConverter;
+
+
         public JsonApiContractResolver(JsonConverter resourceObjectConverter)
         {
             ResourceObjectConverter = resourceObjectConverter;
-            ResourceObjectListConverter = new ResourceObjectListConverter(ResourceObjectConverter);
-            ResourceRelationshipConverter = new ResourceRelationshipConverter();
 
+            ResourceObjectListConverter = new ResourceObjectListConverter(ResourceObjectConverter);
+            ResourceIdentifierConverter = new ResourceIdentifierConverter(ResourceObjectConverter.CanConvert);
+            ResourceRelationshipConverter = new ResourceRelationshipConverter(ResourceIdentifierConverter.CanConvert);
+            
             this.NamingStrategy = new CamelCaseNamingStrategy();
         }
 
@@ -53,5 +58,18 @@ namespace JsonApiSerializer.ContractResolvers
 
             return base.ResolveContractConverter(objectType);
         }
+
+        protected override JsonObjectContract CreateObjectContract(Type objectType)
+        {
+            var contract = base.CreateObjectContract(objectType);
+            if (ResourceIdentifierConverter.IsExplicitResourceIdentifier(objectType))
+                return new ResourceIdentifierContract(contract);
+            if (ResourceObjectConverter.CanConvert(objectType))
+                return new ResourceObjectContract(contract, ResourceRelationshipConverter.CanConvert);
+            if (ResourceRelationshipConverter.IsExplicitRelationship(objectType))
+                return new ResourceRelationshipContract(contract);
+            return contract;
+        }
+
     }
 }

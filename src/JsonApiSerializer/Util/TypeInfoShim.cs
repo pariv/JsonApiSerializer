@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace JsonApiSerializer.Util
 {
-    public static class TypeInfoShim
+     public static class TypeInfoShim
     {
         public static IEnumerable<Type> GetInterfaces(TypeInfo info)
         {
@@ -64,5 +64,7 @@ namespace JsonApiSerializer.Util
         {
             return default(T);
         }
+
+
     }
 }

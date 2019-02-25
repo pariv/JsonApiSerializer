@@ -4,6 +4,7 @@ using JsonApiSerializer.Test.Models.Articles;
 using JsonApiSerializer.Test.Models.Locations;
 using JsonApiSerializer.Test.TestUtils;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using JsonApiSerializer.JsonApi.WellKnown;
@@ -478,6 +479,43 @@ namespace JsonApiSerializer.Test.SerializationTests
         }
 
         [Fact]
+        public void When_relationship_include_null_should_serialize_relationships()
+        {
+            var root = new ArticleWithRelationship
+            {
+                Id = "1234",
+                Title = "My Article",
+                Comments = null,
+                Author = null
+            };
+            var includeNull = new JsonApiSerializerSettings()
+            {
+                Formatting = Formatting.Indented,
+                NullValueHandling = NullValueHandling.Include
+            };
+            var json = JsonConvert.SerializeObject(root, includeNull);
+            var expectedjson = @"{
+                ""data"": {
+                    ""id"": ""1234"",
+                    ""type"": ""articles"",
+                    ""links"": null,
+                    ""attributes"": {
+                        ""title"": ""My Article""
+                    },
+                    ""relationships"": {
+                        ""comments"": {
+                            ""data"" : []
+                        },
+                        ""author"": {
+                            ""data"" : null
+                        }
+                    }
+                }
+            }";
+            Assert.Equal(expectedjson, json, JsonStringEqualityComparer.Instance);
+        }
+
+        [Fact]
         public void When_data_missing_should_not_serialize_data()
         {
             var root = new ArticleWithDatalessRelationship
@@ -694,6 +732,70 @@ namespace JsonApiSerializer.Test.SerializationTests
         }
 
         [Fact]
+        public void When_relationship_not_identifable_from_property_type_should_serialize_as_relationship()
+        {
+            var article = new
+            {
+                id = "1234",
+                Title = "My Article",
+                type = "articles",
+                author = (object)new //declared object but actaul type is relationship
+                {
+                    Id = "333",
+                    type = "people",
+                    FirstName = "John",
+                    LastName = "Smith",
+                    Twitter = "jsmi"
+                },
+                timestamps = (object)new //declared object but actaul type is attribute
+                {
+                    published = new DateTime(2018, 10, 28),
+                    edited = new DateTime(2018, 10, 31),
+                }
+            };
+            var root = DocumentRoot.Create((object)article);
+
+            var json = JsonConvert.SerializeObject(root, settings);
+
+            var expectedjson = @"{
+                ""data"": {
+                    ""id"": ""1234"",
+                    ""type"": ""articles"",
+                    ""attributes"": {
+                        ""title"": ""My Article"",
+                        ""timestamps"": {
+                            ""published"": ""2018-10-28T00:00:00"",
+                            ""edited"": ""2018-10-31T00:00:00""
+                        }
+                    },
+                    ""relationships"": {
+                        ""author"": {
+                            ""data"": { 
+                                ""id"":""333"", 
+                                ""type"":""people""
+                            }
+                        }
+                    }
+                },
+                ""included"" : [
+                    {
+                        ""id"": ""333"",
+                        ""type"": ""people"",
+                        ""attributes"":{
+                            ""firstName"": ""John"",
+                            ""lastName"": ""Smith"",
+                            ""twitter"": ""jsmi""
+                        }
+
+                    }
+                ]
+            }";
+
+            Assert.Equal(expectedjson, json, JsonStringEqualityComparer.Instance);
+        }
+
+        
+        [Fact]
         public void When_passing_objects_and_references_without_id_create_temp_id()
         {
             var article = new Article
@@ -734,6 +836,7 @@ namespace JsonApiSerializer.Test.SerializationTests
             Assert.Equal(expectedjson, json, JsonStringEqualityComparer.Instance);
         }
 
+        
         [Fact]
         public void When_updating_resources_with_relations_sets_update_method_to_relations()
         {
@@ -819,5 +922,7 @@ namespace JsonApiSerializer.Test.SerializationTests
 
             Assert.Equal(expectedjson, json, JsonStringEqualityComparer.Instance);
         }
+
     }
+
 }
